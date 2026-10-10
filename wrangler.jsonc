@@ -1,0 +1,9 @@
+{
+  // Static-assets-only Worker: serves dist/, no server code.
+  "name": "code2act-demo",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
