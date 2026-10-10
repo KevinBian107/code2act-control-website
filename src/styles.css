@@ -185,6 +185,13 @@ button.icon:hover { background: var(--muted); }
   color: #1c1917; font: 700 10px/14px system-ui, sans-serif; text-align: center;
 }
 
+.credits {
+  margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted-fg);
+}
+.credits a { color: var(--primary); text-decoration: none; }
+.credits a:hover { text-decoration: underline; }
+
 @media (hover: none) { kbd { display: none; } }
 
 @media (max-width: 860px) {

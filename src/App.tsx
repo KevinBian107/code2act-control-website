@@ -261,6 +261,15 @@ export default function App() {
               pose, to try again.
             </p>
           </details>
+
+          <footer className="credits">
+            Inspired by the{' '}
+            <a href="https://mimic-mjx-web-demo.pages.dev/" target="_blank" rel="noreferrer">MIMIC-MJX web demo</a>{' '}
+            by Charles Y. Zhang (<a href="https://github.com/charles-zhng/mimic-mjx-web-demo" target="_blank" rel="noreferrer">source</a>).
+            Built on <a href="https://mimic-mjx.talmolab.org/" target="_blank" rel="noreferrer">MIMIC-MJX</a>,{' '}
+            <a href="https://www.npmjs.com/package/@mujoco/mujoco" target="_blank" rel="noreferrer">MuJoCo WASM</a> and{' '}
+            <a href="https://onnxruntime.ai/" target="_blank" rel="noreferrer">ONNX Runtime Web</a>.
+          </footer>
         </aside>
       </main>
     </div>

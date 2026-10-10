@@ -42,6 +42,13 @@ is almost never performed (0.02). Everything runs client-side:
 - **No cherry-picking:** the project page's preset videos show the best of 48
   bodies. This demo shows whatever happens.
 
+## Acknowledgements
+
+Inspired by the [MIMIC-MJX web demo](https://mimic-mjx-web-demo.pages.dev/)
+by Charles Y. Zhang ([source](https://github.com/charles-zhng/mimic-mjx-web-demo)),
+which showed that the MIMIC-MJX rat can run in real time in the browser with
+MuJoCo WASM and onnxruntime-web. Built on [MIMIC-MJX](https://mimic-mjx.talmolab.org/).
+
 ## Development
 
 ```bash
