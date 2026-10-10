@@ -1,0 +1,14 @@
+{
+ "checkpoint": "model_checkpoints/260629_212713_669229_step208",
+ "code_stack_size": 5,
+ "hidden_sizes": [
+  512,
+  512,
+  256,
+  256
+ ],
+ "action_size": 38,
+ "proprio_size": 277,
+ "ctrl_dt": 0.01,
+ "window_convention": "ctrl"
+}
