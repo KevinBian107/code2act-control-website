@@ -45,6 +45,7 @@ export default function App() {
     loadMeta(BASE).then((m) => {
       setMeta(m);
       setBlocks(presetBlocks(m.symbols.presets.tour, m.symbols.symbols));
+      setStart(m.symbols.presets.tour.start ?? 0);
     }).catch((e) => setError(String(e)));
   }, []);
 
@@ -119,8 +120,11 @@ export default function App() {
     if (!meta) return;
     setPreset(key);
     setSelected(null);
-    setBlocks(presetBlocks(meta.symbols.presets[key], meta.symbols.symbols));
-    restart();
+    const p = meta.symbols.presets[key];
+    const s = p.start ?? start;
+    setBlocks(presetBlocks(p, meta.symbols.symbols));
+    setStart(s);
+    restart(s);
     setPlaying(true);
   };
 

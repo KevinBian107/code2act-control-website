@@ -35,9 +35,10 @@ is almost never performed (0.02). Everything runs client-side:
   paper's findings.
   - The palette bars show per-symbol behavior recall from the paper's
     held-symbol test (light) and exact-symbol recall (dark).
-  - The presets were checked from all 48 start poses in MuJoCo C, the same
-    engine as the browser. Median per-symbol labeler agreement was 0.83 (tour),
-    1.00 (unseen transitions) and 0.75 (rapid switching), with no falls; see
+  - The presets were picked by a search over 56 symbol chains, run from all 48
+    start poses in MuJoCo C, the same engine as the browser. Each preset
+    opens on a start pose where every phase lands. That held in the browser
+    code path too, and in MuJoCo C with small action noise. See
     `c2a/webdemo/README.md`.
 - **No cherry-picking:** the project page's preset videos show the best of 48
   bodies. This demo shows whatever happens.

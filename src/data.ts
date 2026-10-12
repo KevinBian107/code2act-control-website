@@ -14,6 +14,7 @@ export interface Preset {
   title: string;
   blurb: string;
   blocks: [string, number][];
+  start?: number; // start pose the chain was verified from
 }
 
 export interface SymbolsFile {
