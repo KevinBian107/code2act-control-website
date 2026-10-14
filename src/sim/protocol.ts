@@ -1,15 +1,13 @@
 // Messages between the UI thread and the simulation worker.
 import type { Block } from './sequencer';
 
-export type Mode = 'timeline' | 'live';
-
+// The timeline only changes together with a reset, so every run plays one
+// whole sequence from its start pose (the case the demo's chains were
+// verified for).
 export type Command =
-  | { type: 'reset'; start: number }
+  | { type: 'reset'; start: number; blocks: Block[] }
   | { type: 'play'; playing: boolean }
-  | { type: 'speed'; speed: number }
-  | { type: 'mode'; mode: Mode }
-  | { type: 'timeline'; blocks: Block[] }
-  | { type: 'live'; code: number };
+  | { type: 'speed'; speed: number };
 
 export interface GeomInfo {
   type: number; // mjtGeom

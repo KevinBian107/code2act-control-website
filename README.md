@@ -31,17 +31,24 @@ is almost never performed (0.02). Everything runs client-side:
   substeps.
 - **Start poses:** the 48 start poses are the test clips used by the project
   page's sequence viewer.
-- **Symbols are not always realized.** This is expected and is part of the
-  paper's findings.
-  - The palette bars show per-symbol behavior recall from the paper's
-    held-symbol test (light) and exact-symbol recall (dark).
-  - The presets were picked by a search over 56 symbol chains, run from all 48
-    start poses in MuJoCo C, the same engine as the browser. Each preset
-    opens on a start pose where every phase lands. That held in the browser
-    code path too, and in MuJoCo C with small action noise. See
-    `c2a/webdemo/README.md`.
-- **No cherry-picking:** the project page's preset videos show the best of 48
-  bodies. This demo shows whatever happens.
+- **Only verified sequences can be built.** From some states a symbol pushes
+  the rat into a posture where the controller loses control, and the rest of
+  the sequence is lost.
+  - The palette lights only the symbols that keep the sequence inside the
+    verified tree of the chosen start pose (up to 5 symbols, 4 s each). Each
+    of the 10 offered clips has its own tree of 399–725 chains. In every
+    chain the body never lost control in 17 runs (MuJoCo C clean plus 16
+    replicas with small action noise). "Lost control" means moving faster than
+    2.5 m/s, sinking and freezing for 1 s, or lying upside down.
+  - The behavior itself is not checked: the rat may answer a symbol with a
+    neighboring behavior.
+  - Changing the clip keeps the longest verified prefix; choosing an example
+    moves to a clip that has it. Editing resets the rat, so a run always plays
+    one whole tested sequence.
+  - In a held-out replay of sampled sequences through this app's TS runner,
+    about 1 run in 32 lost control.
+  - See "Verified sequences" in `c2a/webdemo/README.md`, and
+    `tests/verify_chains.test.ts` for the TS replay.
 
 ## Acknowledgements
 
@@ -90,8 +97,8 @@ under Cloudflare's 25 MiB per-file limit; the largest is `controller.onnx` at
 src/sim/observation.ts  277-d proprioception (port of c2a/webdemo/c_sim.py)
 src/sim/runner.ts       control loop: env action bookkeeping, substeps
 src/sim/policy.ts       onnxruntime-web session
-src/sim/sequencer.ts    timeline / live symbol -> forward code window
+src/sim/sequencer.ts    timeline -> forward code window
 src/sim/worker.ts       real-time loop in a Web Worker
 src/render/scene.ts     three.js rat, ghost trail, root trace, follow camera
-src/ui/                 palette, timeline editor, readouts
+src/ui/                 palette (verified next symbols), timeline, readouts
 ```

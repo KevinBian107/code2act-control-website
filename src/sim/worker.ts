@@ -4,9 +4,9 @@ import loadMujoco from '@mujoco/mujoco';
 import mujocoWasmUrl from '@mujoco/mujoco/mujoco.wasm?url';
 import type { MjModel } from '@mujoco/mujoco';
 import { createPolicy } from './policy';
-import type { Command, GeomInfo, Mode, WorkerMessage } from './protocol';
+import type { Command, GeomInfo, WorkerMessage } from './protocol';
 import { Runner } from './runner';
-import { liveWindow, timelineLength, timelineWindow, type Block } from './sequencer';
+import { timelineLength, timelineWindow, type Block } from './sequencer';
 
 const BASE = import.meta.env.BASE_URL;
 const RAT_GEOM_GROUP = 2;
@@ -33,10 +33,8 @@ let ratGeoms: number[] = [];
 
 let playing = false;
 let speed = 1;
-let mode: Mode = 'timeline';
 let blocks: Block[] = [];
 let position = 0;
-let liveCode = 8;
 let pendingReset: number | null = null;
 let rootSpeed = 0;
 let msPerStep = 0;
@@ -125,7 +123,7 @@ async function loop(): Promise<void> {
       position = 0;
       rootSpeed = 0;
       lastPc = [0, 0];
-      code = mode === 'timeline' && blocks.length ? blocks[0].code : liveCode;
+      code = blocks.length ? blocks[0].code : code;
       postFrame(code);
     }
     const now = performance.now();
@@ -140,17 +138,13 @@ async function loop(): Promise<void> {
     let n = 0;
     const t0 = performance.now();
     while (budget >= 1 && n < MAX_STEPS_PER_TICK) {
-      let window: number[];
-      if (mode === 'timeline') {
-        if (!blocks.length || position >= timelineLength(blocks)) {
-          playing = false;
-          post({ type: 'ended' });
-          break;
-        }
-        window = timelineWindow(blocks, position, stack);
-      } else {
-        window = liveWindow(liveCode, stack);
+      if (pendingReset !== null) break; // a reset (new timeline) arrived mid-tick
+      if (!blocks.length || position >= timelineLength(blocks)) {
+        playing = false;
+        post({ type: 'ended' });
+        break;
       }
+      const window = timelineWindow(blocks, position, stack);
       code = window[0];
       const x0 = runner.data.qpos[0], y0 = runner.data.qpos[1];
       const out = await runner.step(window);
@@ -175,12 +169,9 @@ async function loop(): Promise<void> {
 self.onmessage = (e: MessageEvent<Command>) => {
   const c = e.data;
   switch (c.type) {
-    case 'reset': pendingReset = c.start; break;
+    case 'reset': pendingReset = c.start; blocks = c.blocks; break;
     case 'play': playing = c.playing; break;
     case 'speed': speed = c.speed; break;
-    case 'mode': mode = c.mode; break;
-    case 'timeline': blocks = c.blocks; break;
-    case 'live': liveCode = c.code; break;
   }
 };
 

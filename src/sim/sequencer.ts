@@ -1,4 +1,4 @@
-// Turns the user's command (a timeline of symbol blocks, or a live symbol)
+// Turns the user's command (a timeline of symbol blocks)
 // into the controller's forward code window: the next `stack` control steps,
 // padded with the last symbol (the convention of every paper rollout).
 
@@ -25,9 +25,4 @@ export function timelineWindow(blocks: Block[], t: number, stack: number): numbe
   const w = new Array<number>(stack);
   for (let i = 0; i < stack; i++) w[i] = codeAt(blocks, t + i);
   return w;
-}
-
-/** Live mode: no lookahead is possible, so the window holds the current symbol. */
-export function liveWindow(code: number, stack: number): number[] {
-  return new Array<number>(stack).fill(code);
 }

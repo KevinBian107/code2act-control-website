@@ -63,14 +63,14 @@ export default function Readout({ history, symbols, palette, pca }: {
         let first = true;
         for (let i = 0; i < h.step.length; i++) {
           if (now - h.step[i] > WINDOW_STEPS) continue;
-          const y = H - 4 - (Math.min(h.speed[i], 0.5) / 0.5) * (H - 18);
+          const y = H - 4 - (Math.min(h.speed[i], 0.5) / 0.5) * (H - 32); // caption above
           if (first) ctx.moveTo(x(h.step[i]), y); else ctx.lineTo(x(h.step[i]), y);
           first = false;
         }
         ctx.stroke();
         ctx.fillStyle = fg;
         ctx.font = '11px system-ui, sans-serif';
-        ctx.fillText('root speed, 0–0.5 m/s · last 10 s', 4, H - 6);
+        ctx.fillText('root speed, 0–0.5 m/s · last 10 s', 4, 21);
       }
       if (plane.current) {
         const ctx = setup(plane.current);
