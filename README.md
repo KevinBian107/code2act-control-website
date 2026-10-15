@@ -31,22 +31,20 @@ is almost never performed (0.02). Everything runs client-side:
   substeps.
 - **Start poses:** the 48 start poses are the test clips used by the project
   page's sequence viewer.
-- **Only verified sequences can be built.** From some states a symbol pushes
-  the rat into a posture where the controller loses control, and the rest of
-  the sequence is lost.
+- **Only verified sequences can be built.** A symbol can fail in two ways:
+  the controller loses control, or the rat does a different behavior (most
+  often it is still walking when a rear, turn or stop is asked for).
   - The palette lights only the symbols that keep the sequence inside the
-    verified tree of the chosen start pose (up to 5 symbols, 4 s each). Each
-    of the 10 offered clips has its own tree of 399–725 chains. In every
-    chain the body never lost control in 17 runs (MuJoCo C clean plus 16
-    replicas with small action noise). "Lost control" means moving faster than
-    2.5 m/s, sinking and freezing for 1 s, or lying upside down.
-  - The behavior itself is not checked: the rat may answer a symbol with a
-    neighboring behavior.
-  - Changing the clip keeps the longest verified prefix; choosing an example
-    moves to a clip that has it. Editing resets the rat, so a run always plays
-    one whole tested sequence.
-  - In a held-out replay of sampled sequences through this app's TS runner,
-    about 1 run in 32 lost control.
+    verified tree of the chosen start pose (up to 8 symbols, 4 s each). Each
+    of the 10 offered clips has its own tree of 219–645 chains. In every
+    chain the body kept control in 17 simulated runs (MuJoCo C clean plus 16
+    replicas with small action noise), and no switch is used that showed the
+    asked-for behavior in fewer than half of the tested runs.
+  - Examples play from the start pose they were checked from; "Your sequence"
+    starts empty and keeps what you build. Editing resets the rat, so a run
+    always plays one whole tested sequence.
+  - In a held-out replay through this app's TS runner, about 1 run in 32 lost
+    control (about 1 in 14 for 7–8 symbols).
   - See "Verified sequences" in `c2a/webdemo/README.md`, and
     `tests/verify_chains.test.ts` for the TS replay.
 

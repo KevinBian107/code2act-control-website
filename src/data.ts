@@ -13,11 +13,13 @@ export interface SymbolInfo {
 export interface Preset {
   title: string;
   blocks: [string, number][];
+  clip: number; // start pose it was chosen and checked from (index into graph.starts)
 }
 
 /** The verified sequences, one tree per start pose. Every chain in
- * `chains[i]` (and every prefix of it) passed in every run from start pose
- * `starts[i]`, each phase read as commanded. */
+ * `chains[i]` (and every prefix of it) kept control in every simulated run
+ * from start pose `starts[i]`, and uses no switch that mostly gives the wrong
+ * behavior. */
 export interface Graph {
   chains: string[][]; // per start pose; symbol names joined by '>'
   max_blocks: number;
@@ -26,6 +28,7 @@ export interface Graph {
   runs: number; // runs every offered chain passed
   held: number; // held-out replicas (not used for selection)
   held_fails: [number, number] | null; // failed / total chain x clip runs in them
+  held_by_length: [number, number][] | null; // the same, by chain length 1..max_blocks
 }
 
 export interface SymbolsFile {

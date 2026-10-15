@@ -5,6 +5,7 @@
 //   VERIFY_JOB=job.json SHARD=0 NSHARD=1 OUT=dir npx vitest run tests/verify_chains.test.ts
 // job.json: {"clips": [...], "chains": ["Rear_R>Rear_L", ...]} (all pairs),
 // or {"pairs": [["Rear_R>Rear_L", 12], ...]}; optional "hold" (steps per block, 250)
+// and "settle" (first step of each block's qpos dump, hold - 100)
 // PHYS=1 dumps per-step body signals for the whole chain instead (as
 // chain_tree --phys: root speed, root height, up-axis z, mean joint speed),
 // for `chain_select phys-ts`.
@@ -28,6 +29,7 @@ it.skipIf(!process.env.VERIFY_JOB)('replay chains for labeling', async () => {
     manifest.hidden_sizes, manifest.code_stack_size, { numThreads: 1 });
   const runner = new Runner(mj, model, policy, manifest.hidden_sizes);
   const hold: number = job.hold ?? 250;
+  const settle: number = job.settle ?? hold - 100; // qpos dump: steps [settle, hold) of each block
   const runs: [string, number][] = job.pairs ?? [];
   if (!job.pairs) job.chains.forEach((c: string) => job.clips.forEach((k: number) => runs.push([c, k])));
   const mine = runs.filter((_, i) => i % nshard === shard);
@@ -38,7 +40,7 @@ it.skipIf(!process.env.VERIFY_JOB)('replay chains for labeling', async () => {
     runner.reset(starts[clip]);
     const T = blocks.length * hold;
     for (let t = 0; t < T; t++) {
-      if (!phys && t % hold >= hold - 100) { chunks.push(Float32Array.from(runner.data.qpos)); }
+      if (!phys && t % hold >= settle) { chunks.push(Float32Array.from(runner.data.qpos)); }
       const before = Float64Array.from(runner.data.qpos);
       await runner.step(timelineWindow(blocks, t, manifest.code_stack_size));
       if (phys) {
@@ -50,10 +52,10 @@ it.skipIf(!process.env.VERIFY_JOB)('replay chains for labeling', async () => {
           1 - 2 * (q[4] ** 2 + q[5] ** 2), (j / (q.length - 7)) * 100));
       }
     }
-    index.push({ chain, clip, offset: off, blocks: blocks.length }); off += blocks.length * (phys ? hold : 100);
+    index.push({ chain, clip, offset: off, blocks: blocks.length }); off += blocks.length * (phys ? hold : hold - settle);
   }
   const nq = phys ? 4 : model.nq; const buf = new Float32Array(off * nq);
   chunks.forEach((c, i) => buf.set(c, i * nq));
   writeFileSync(`${process.env.OUT}/ts_${shard}.bin`, Buffer.from(buf.buffer));
-  writeFileSync(`${process.env.OUT}/ts_${shard}.json`, JSON.stringify({ nq, hold, index }));
+  writeFileSync(`${process.env.OUT}/ts_${shard}.json`, JSON.stringify({ nq, hold, settle, index }));
 }, 24 * 3600_000);

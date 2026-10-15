@@ -9,19 +9,16 @@ import Timeline from './ui/Timeline';
 
 const BASE = import.meta.env.BASE_URL;
 const heldRate = ([f, n]: [number, number]) => f ? `about 1 run in ${Math.round(n / f)}` : `none of ${n} runs`;
+/** Held-out failure rate of the two longest chain lengths, e.g. "about 1 in 14 of the 7–8 symbol". */
+const longRate = (g: SymbolsFile['graph']) => {
+  const h = g.held_by_length;
+  if (!h || h.length < 2) return '';
+  const [f, n] = h.slice(-2).reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
+  return f ? `about 1 in ${Math.round(n / f)} of the ${h.length - 1}–${h.length} symbol` : '';
+};
 const PAPER_URL = 'https://kbian.org/Code2Act-website/';
 
 const names = (m: SymbolsFile, b: Block[]) => b.map((x) => m.symbols[x.code].name);
-
-/** `from` if the sequence was verified from that start pose, else the next one that has it. */
-function clipFor(m: SymbolsFile, b: Block[], from: number): number {
-  const n = m.graph.starts.length;
-  for (let i = 0; i < n; i++) {
-    const c = (from + i) % n;
-    if (isVerified(m.graph, c, names(m, b))) return c;
-  }
-  return from;
-}
 
 interface Hud {
   code: number;
@@ -41,7 +38,8 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [threads, setThreads] = useState(1);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [preset, setPreset] = useState('tour'); // '' once the sequence is edited
+  const [preset, setPreset] = useState('tour'); // '' = your sequence
+  const [custom, setCustom] = useState<{ blocks: Block[]; clip: number }>({ blocks: [], clip: 0 });
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [clip, setClip] = useState(0); // index into graph.starts
@@ -53,9 +51,10 @@ export default function App() {
   useEffect(() => {
     loadMeta(BASE).then((m) => {
       setMeta(m);
-      const b = presetBlocks(m.symbols.presets.tour, m.symbols.symbols);
-      setClip(Math.max(0, clipFor(m.symbols, b, 0)));
-      setBlocks(b);
+      const tour = m.symbols.presets.tour;
+      setClip(tour.clip);
+      setCustom({ blocks: [], clip: tour.clip });
+      setBlocks(presetBlocks(tour, m.symbols.symbols));
     }).catch((e) => setError(String(e)));
   }, []);
 
@@ -122,6 +121,7 @@ export default function App() {
   const edit = useCallback((b: Block[]) => {
     setNotice('');
     setBlocks(b);
+    setCustom({ blocks: b, clip });
     setPreset('');
     setPlaying(false);
     reset(b, clip);
@@ -144,17 +144,19 @@ export default function App() {
     setPlaying((p) => !p);
   }, [playing, hud.position, blocks, restart]);
 
+  // An example plays from the start pose it was checked from; '' brings back
+  // your own sequence (empty until you build one).
   const loadPreset = (key: string) => {
     if (!meta) return;
-    const b = presetBlocks(meta.symbols.presets[key], meta.symbols.symbols);
-    // Keep the start pose if the example was verified from it, else move on.
-    const c = clipFor(meta.symbols, b, clip);
-    setNotice(c === clip ? '' : `Moved to Clip ${c + 1}: this example was not verified from Clip ${clip + 1}.`);
+    const p = meta.symbols.presets[key];
+    const b = p ? presetBlocks(p, meta.symbols.symbols) : custom.blocks;
+    const c = p ? p.clip : custom.clip;
+    setNotice('');
     setPreset(key);
     setBlocks(b);
     setClip(c);
     reset(b, c);
-    setPlaying(true);
+    setPlaying(!!p);
   };
 
   const chooseClip = (c: number) => {
@@ -165,7 +167,8 @@ export default function App() {
     setNotice(b.length === blocks.length ? ''
       : b.length === 0 ? `Cleared: this sequence was not verified from Clip ${c + 1}.`
       : `Trimmed to ${b.length} symbol${b.length === 1 ? '' : 's'}: the rest was not verified from Clip ${c + 1}.`);
-    if (b.length < blocks.length) setPreset('');
+    setPreset('');
+    setCustom({ blocks: b, clip: c });
     setBlocks(b);
     setClip(c);
     setPlaying(false);
@@ -259,8 +262,8 @@ export default function App() {
               <div className="row">
                 <label htmlFor="preset">Example</label>
                 <select id="preset" value={preset} onChange={(e) => loadPreset(e.target.value)}>
-                  {preset === '' && <option value="">Your sequence</option>}
                   {Object.entries(meta.symbols.presets).map(([k, p]) => <option key={k} value={k}>{p.title}</option>)}
+                  <option value="">Your sequence</option>
                 </select>
               </div>
               <div className="row">
@@ -285,27 +288,25 @@ export default function App() {
             <details className="notes">
               <summary>Why only some symbols are lit</summary>
               <p>
-                From some states, a symbol pushes the rat into a posture the controller rarely saw in
-                training, and it loses control: it flies off or tumbles, or sinks to the floor and
-                freezes. So only sequences tested from this clip are lit. Here{' '}
-                {graph.chains[clip].length.toLocaleString('en-US')} of the 4,686 possible chains (up to{' '}
-                {graph.max_blocks} symbols, {graph.hold / 100} s each) kept control in all {graph.runs}{' '}
-                simulated runs: the clean physics plus {graph.runs - 1} with tiny nudges to the motor
-                commands. Only control is checked, not which behavior you get, so the rat may answer a
-                symbol with a neighboring one. It is not a guarantee
-                {graph.held_fails ? <>: in a replay through this page's own code, {heldRate(graph.held_fails)}{' '}
-                still lost control.</> : '.'}
+                A symbol can fail in two ways: the rat loses control (it flies off, tumbles, or sinks
+                to the floor and freezes), or it does a different behavior, most often because it is
+                still moving when the switch comes (a rat needs to be nearly still to rear). So only
+                sequences tested from this clip are lit. Switches that showed the asked-for behavior in
+                fewer than half of the runs we tested are left out, mostly switching out of a walk
+                into a rear, turn or stop. Here {graph.chains[clip].length.toLocaleString('en-US')} sequences
+                (up to {graph.max_blocks} symbols, {graph.hold / 100} s each) kept control in
+                all {graph.runs} simulated runs: the clean physics plus {graph.runs - 1} with tiny nudges
+                to the motor commands. It is not a guarantee, and long sequences are riskier: later
+                symbols more often get a neighboring behavior
+                {graph.held_fails ? <>, and in a replay through this page's own code {heldRate(graph.held_fails)}{' '}
+                still lost control{longRate(graph) && <> ({longRate(graph)} ones)</>}.</> : '.'}
               </p>
             </details>
           )}
 
           <footer className="credits">
             Inspired by the{' '}
-            <a href="https://mimic-mjx-web-demo.pages.dev/" target="_blank" rel="noreferrer">MIMIC-MJX web demo</a>{' '}
-            by Charles Y. Zhang (<a href="https://github.com/charles-zhng/mimic-mjx-web-demo" target="_blank" rel="noreferrer">source</a>).
-            Built on <a href="https://mimic-mjx.talmolab.org/" target="_blank" rel="noreferrer">MIMIC-MJX</a>,{' '}
-            <a href="https://www.npmjs.com/package/@mujoco/mujoco" target="_blank" rel="noreferrer">MuJoCo WASM</a> and{' '}
-            <a href="https://onnxruntime.ai/" target="_blank" rel="noreferrer">ONNX Runtime Web</a>.
+            <a href="https://mimic-mjx-web-demo.pages.dev/" target="_blank" rel="noreferrer">MIMIC-MJX web demo</a>.
           </footer>
         </aside>
       </main>
